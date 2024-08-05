@@ -37,6 +37,8 @@ export default function Cascade() {
   const [replyMode, setReplyMode] = useState(0);
   const [replyComment, setReplyComment] = useState("");
   const [allReplyIds, setAllReplyIds] = useState<Map<any, any>>(new Map());
+  const [hoveredReply, setHoveredReply] = useState(null);
+  const [inViewReply, setInViewReply] = useState(null);
 
   function handleImageClick() {
     if (!thread) return;
@@ -100,7 +102,7 @@ export default function Cascade() {
               {thread.data.post.directReplies && thread.data.post.directReplies.map((reply: number) => <a key={reply} href={`#${reply.toString()}`} className="px-0.5 underline text-[10px] text-slate-600 hover:text-red-600 hover:cursor-pointer">&gt;&gt;{reply}</a>)}
             </span>
             <blockquote className="clear-right whitespace-pre-wrap mx-2 col-span-1 pt-2 pb-4 px-1 text-[12px]">{formatComment(thread.data.post.comment)}</blockquote>
-            {thread.data.post.ThreadReplies.map((reply: any) => <Reply key={reply.id} allReplyIds={allReplyIds}  reply={reply}  handleReplyClick={handleReplyClick} />)}
+            {thread.data.post.ThreadReplies.map((reply: any) => <Reply key={reply.id} allReplyIds={allReplyIds}  reply={reply}  handleReplyClick={handleReplyClick} hoveredReply={hoveredReply} setHoveredReply={setHoveredReply} inViewReply={inViewReply} setInViewReply={setInViewReply} />)}
           </div>
         </div>
       )}

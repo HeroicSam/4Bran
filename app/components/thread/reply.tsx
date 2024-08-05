@@ -1,6 +1,8 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDate } from "../utility/functions";
+import useOnScreen from "@/hooks/use-on-screen";
+import ReplyPreviewBox from "./reply-preview-box";
 
 function formatComment(comment: string, allReplyIds: Map<any, any>, replyId: number) {
   // Split the comment by newlines and special formatting rules
@@ -34,11 +36,30 @@ function formatComment(comment: string, allReplyIds: Map<any, any>, replyId: num
   });
 }
 
-export default function Reply({ allReplyIds, reply, handleReplyClick }: { allReplyIds: Map<any, any>, reply: any, handleReplyClick: Function }) {
+export default function Reply({
+  allReplyIds,
+  reply,
+  handleReplyClick,
+  hoveredReply,
+  setHoveredReply,
+  inViewReply,
+  setInViewReply
+}: { 
+  allReplyIds: Map<any, any>,
+  reply: any,
+  handleReplyClick: Function,
+  hoveredReply: number | null,
+  setHoveredReply: React.Dispatch<React.SetStateAction<null>>,
+  inViewReply: any,
+  setInViewReply: any
+}) {
   const [ratio, setRatio] = useState(1);
   const [width, setWidth] = useState(150);
   const [height, setHeight] = useState(150);
   const [enlarged, setEnlarged] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const isVisible = useOnScreen(ref);
 
   function handleImageClick() {
     if (!reply) return;
@@ -53,15 +74,35 @@ export default function Reply({ allReplyIds, reply, handleReplyClick }: { allRep
     setEnlarged(!enlarged);
   }
 
+  useEffect(() => {
+    if (hoveredReply === reply.id && !isVisible) {
+      setInViewReply(reply)
+    }
+  }, [ hoveredReply])
+
+  function handleMouseLeave() {
+    setHoveredReply(null)
+    setInViewReply(null)
+  }
+
   return (
-    <div id={reply.id.toString()} className="clear-right text-[13px] bg-inherit my-0.5 pt-1 px-2">
-      <div className="flex bg-blue-200 max-w-fit pt-1 pb-3">
+    <div id={reply.id.toString()} ref={ref} className="relative clear-right text-[13px] bg-inherit my-0.5 pt-1 px-2">
+      <div className={`relative flex max-w-fit pt-1 pb-3 ${isVisible && hoveredReply === reply.id ? "bg-red-100" : "bg-blue-200"}`}>
         <div className="px-2 flex flex-col ">
           <div className="flex items-center">
             <span className="px-2 font-bold text-green-700 ">Anonymous</span>
-            <span className="px-1 bg-blue-200">{formatDate(reply.createdAt)}</span>
+            <span className={`px-1 ${isVisible && hoveredReply === reply.id ? "bg-red-100" : "bg-blue-200"}`}>{formatDate(reply.createdAt)}</span>
             <span className="px-1 hover:text-red-600 hover:cursor-pointer" onClick={() => handleReplyClick({ reply })}>No.{reply.id}</span>
-            {reply.replyReferences && reply.replyReferences.map((reply: any) => <span className="px-1 underline text-[10px] text-slate-600 hover:text-red-600 hover:cursor-pointer">&gt;&gt;{reply}</span>)}
+            {reply.replyReferences && reply.replyReferences.map((reply: any) => (
+              <div className="relative">
+                <span ref={spanRef} className="px-1 underline text-[10px] text-slate-600 hover:text-red-600 hover:cursor-pointer" onMouseEnter={() => setHoveredReply(reply)} onMouseLeave={handleMouseLeave}>
+                  &gt;&gt;{reply}
+                </span>
+                {inViewReply && (inViewReply.id === reply) && (
+                  <ReplyPreviewBox reply={inViewReply} width={spanRef?.current?.offsetWidth || 0} />
+                )}
+              </div>
+            ))}
           </div>
           {reply.image && (
             <div className="px-2">
